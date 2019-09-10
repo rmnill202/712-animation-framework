@@ -2,7 +2,8 @@
   <div>
     <div id="three-js-div" style="width: 500px; height: 500px; margin: auto;"></div>
     <div>Some details:</div>
-    <div>Current time: {{(lastFrameTime * 0.001).toFixed(2)}}</div>
+    <div>Current time: {{( (lastFrameTime) * 0.001).toFixed(2)}}</div>
+    <button @click="restart()">Reset</button>
   </div>
 </template>
 
@@ -20,6 +21,7 @@ export default {
       sceneObjects: [],
 
       // Timeline details
+      originTime: 0,
       lastFrameTime: 0,   // Milliseconds
       endTime: 20 * 1000, // Milliseconds
       isPaused: false
@@ -53,6 +55,10 @@ export default {
       // Set up the renderer
       this.renderer = new THREE.WebGLRenderer({antialias: true});
       this.renderer.setSize(threeJsDiv.clientWidth, threeJsDiv.clientHeight);
+
+      // Initialize the timeline
+      this.originTime = performance.now();
+      this.lastFrameTime = this.originTime;
 
       // Finally, add the renderer to the DOM
       threeJsDiv.appendChild(this.renderer.domElement);
@@ -118,12 +124,19 @@ export default {
       if(!this.paused) {
           //// TIMELINE STUFF - Could be moved to its own method, probably!
           // Calculate delta time
-          let dt = newTime - this.lastFrameTime;
-          this.lastFrameTime = newTime;
+          let dt = (newTime - this.originTime) - this.lastFrameTime;
+          
 
           // If we need to pause
-          if(this.lastFrameTime >= this.endTime) {
+          if(newTime >= this.endTime) {
             this.paused = true;
+
+            // Re-calculate dt such that we limit last frame time to the end of the timeline
+            dt = this.endTime - this.lastFrameTime;
+            this.lastFrameTime = this.endTime;
+          }
+          else {
+            this.lastFrameTime = (newTime - this.originTime);
           }
           ////
 
@@ -133,6 +146,23 @@ export default {
 
       // Finally, render the updated scene
       this.renderer.render(this.scene, this.camera);
+    },
+    restart() {
+      // Restart the timeline
+      this.originTime = performance.now();
+      this.lastFrameTime = 0;
+      this.isPaused = true;
+
+      // Reset objects - Should really make this behave with any starting position / scene description
+      for(let sceneObj of this.sceneObjects) {
+        sceneObj.mesh.position.x = 0;
+        sceneObj.mesh.position.y = 0;
+        sceneObj.mesh.position.z = 0;
+
+        sceneObj.mesh.rotation.x = 0;
+        sceneObj.mesh.rotation.y = 0;
+        sceneObj.mesh.rotation.z = 0;
+      }
     },
   },
   mounted() {
