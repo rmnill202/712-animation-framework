@@ -121,15 +121,14 @@ export default {
       // Hook for threejs to call this method again
       requestAnimationFrame(this.animationLoop);
 
-      if(!this.paused) {
+      if(!this.isPaused) {
           //// TIMELINE STUFF - Could be moved to its own method, probably!
           // Calculate delta time
           let dt = (newTime - this.originTime) - this.lastFrameTime;
-          
 
           // If we need to pause
-          if(newTime >= this.endTime) {
-            this.paused = true;
+          if((newTime - this.originTime) >= this.endTime) {
+            this.isPaused = true;
 
             // Re-calculate dt such that we limit last frame time to the end of the timeline
             dt = this.endTime - this.lastFrameTime;
@@ -151,7 +150,7 @@ export default {
       // Restart the timeline
       this.originTime = performance.now();
       this.lastFrameTime = 0;
-      this.isPaused = true;
+      this.isPaused = false;
 
       // Reset objects - Should really make this behave with any starting position / scene description
       for(let sceneObj of this.sceneObjects) {
