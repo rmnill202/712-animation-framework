@@ -1,14 +1,13 @@
 <template>
   <div class="about">
-    <h1>This is an about page</h1>
-    <AnimationFramework/>
+    <h1>In Progress</h1>
   </div>
 </template>
 
 <script>
-import AnimationFramework from '../components/AnimationFramework';
+
 
 export default {
-  components: { AnimationFramework }
+  
 };
 </script>
