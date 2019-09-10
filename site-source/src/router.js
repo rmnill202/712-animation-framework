@@ -18,6 +18,11 @@ export default new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
+    },
+    {
+      path: '/update-0',
+      name: 'update-0',
+      component: () => import(/* webpackChunkName: "update_0" */ './views/Update_0.vue')
     }
   ]
 })
