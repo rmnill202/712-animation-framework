@@ -5,7 +5,8 @@
     <!-- <AnimationFramework/> -->
     <div>Updates:</div>
     <!-- <a href="/update-0">Update 0: Framework</a> -->
-    <router-link to="/update-0">Update 0: Framework</router-link>
+    <div><router-link to="/update-0">Update 0: Framework</router-link></div>
+    <div><router-link to="/update-1">Update 1: Keyframing</router-link></div>
   </div>
 </template>
 
