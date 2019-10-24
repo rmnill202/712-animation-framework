@@ -1,8 +1,26 @@
 <template>
   <div>
     <div id="three-js-div" style="width: 500px; height: 500px; margin: auto;"></div>
-    <!-- <button @click="loadAnimation()" style="margin: 10px auto">Load Animation</button>
-    <div><textarea v-model="animationInput" style="width: 300px; height: 190px;"></textarea></div> -->
+    <button @click="playSim()" style="margin: 10px auto">Simulate!</button>
+    <div>
+      <div>Click a button, or update parameters yourself. Then click "Simulate!"</div>
+      <button @click="setupBasic()" style="margin: 10px">Basic Shot</button>
+      <button @click="setupFric()" style="margin: 10px">Basic Shot w/ Heavy Friction</button>
+      <button @click="setupRest()" style="margin: 10px">Basic Shot w/ Heavy Coeff. Restitution</button>
+    </div>
+    <div>
+      <div>Parameters:</div>
+      <div>
+        <span>Restitution: </span> <input v-model.number="co_restitution" type="number"/>
+      </div>
+      <div>
+        <span>Sliding Friction: </span> <input v-model.number="co_static" type="number"/>
+      </div>
+      <div>
+        <span>Shot Force (x and y): </span> <input v-model.number="initial_shot_x" type="number"/> <input v-model.number="initial_shot_y" type="number"/>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -35,15 +53,17 @@ export default {
       //// The physics simulation
       // Parameters
       tableWidth: 1.298 * 15, tableHeight: 2.438 * 15, ballSize: 0.057 * 15,
-      ballMass: 150, 
-      co_restitution: 0.9, co_static: 0.5,
+      ballMass: 170 * 15, 
+      co_restitution: 0.5, co_static: 0.3,
       simulation: null,
+      initial_shot_x: -90, initial_shot_y: 0,
 
       // Meshes for the sim
       ballPositions: [
-        {x: 0, y: 0, vel: [100, 20], mntm: [10,2000], id: 0 },
-        {x: -2, y: 1, vel: [10, 100], mntm: [0,0], id: 1 },
-        {x: 2, y: 2, vel: [-50, -10], mntm: [0,0], id: 2 }
+        {x: 9, y: 0,  vel: [0,0], color: '#ffffff' },
+        {x: 2, y: 0,  vel: [0,0],   color: '#4f7bdb' },
+        {x: 0, y: 1,  vel: [0,0],   color: '#e36d19' },
+        {x: 0, y: -1, vel: [0,0],   color: '#c41010' }
       ],
       ballObjects: [],
       borderObjects: [],
@@ -61,7 +81,7 @@ export default {
       // this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 10);
       this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 5, 1000);
       // this.camera.position.z = -30;
-      // this.camera.rotateY(Math.PI);s
+      // this.camera.rotateY(Math.PI);
       this.camera.position.z = 30;
 
       // Setup the scene
@@ -85,9 +105,11 @@ export default {
     setupScene() {
         
         // Setup for billiard balls
-        for(let pos of this.ballPositions) {
+        for(let i = 0; i < this.ballPositions.length; i++) {
+          let pos = this.ballPositions[i];
+
           // Geometry and mesh
-          let sphere = new THREE.Mesh(new THREE.SphereGeometry(this.ballSize, 32, 32), new THREE.MeshBasicMaterial({color: "#faffd9"}) );
+          let sphere = new THREE.Mesh(new THREE.SphereGeometry(this.ballSize, 32, 32), new THREE.MeshBasicMaterial({color: pos.color}) );
           sphere.position.x = pos.x;
           sphere.position.y = pos.y;
 
@@ -96,10 +118,8 @@ export default {
 
           // Track the mesh
           this.ballObjects.push({
-            id: pos.id,
             mesh: sphere,
-            vel: new THREE.Vector2(... pos.vel),
-            mntm: new THREE.Vector2(... pos.mntm),
+            vel: i == 0 ? new THREE.Vector2(this.initial_shot_x, this.initial_shot_y) : new THREE.Vector2(... pos.vel),
             mass: this.ballMass,
           });
         }
@@ -108,31 +128,34 @@ export default {
         let tableMat = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight, this.tableWidth, 1), new THREE.MeshBasicMaterial({color: "#8aa891"}));
         tableMat.position.z = -2;
 
-        let topBorder = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight, 1, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
-        topBorder.position.y += (this.tableWidth / 2);
+        let underMat = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight + 2.5, this.tableWidth + 2, 1), new THREE.MeshBasicMaterial({color: "#8aa891"}));
+        underMat.position.z = -2.5;
 
-        let bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight, 1, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
-        bottomBorder.position.y -= (this.tableWidth / 2);
+        let topBorder = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight + 2, 1, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
+        topBorder.position.y += (this.tableWidth / 2) + 0.8;
 
-        let leftBorder = new THREE.Mesh(new THREE.BoxGeometry(1, this.tableWidth, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
-        leftBorder.position.x -= (this.tableHeight / 2);
+        let bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(this.tableHeight + 2, 1, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
+        bottomBorder.position.y -= (this.tableWidth / 2) + 0.8;
 
-        let rightBorder = new THREE.Mesh(new THREE.BoxGeometry(1, this.tableWidth, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
-        rightBorder.position.x += (this.tableHeight / 2);
+        let leftBorder = new THREE.Mesh(new THREE.BoxGeometry(1, this.tableWidth + 2.2, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
+        leftBorder.position.x -= (this.tableHeight / 2) + 0.8;
+
+        let rightBorder = new THREE.Mesh(new THREE.BoxGeometry(1, this.tableWidth + 2.2, 1), new THREE.MeshBasicMaterial({color: "#48695d"}));
+        rightBorder.position.x += (this.tableHeight / 2) + 0.8;
 
         this.scene.add(tableMat);
+        this.scene.add(underMat);
         this.table = tableMat;
-        // this.scene.add(topBorder);
-        // this.scene.add(bottomBorder);
-        // this.scene.add(leftBorder);
-        // this.scene.add(rightBorder);
+        this.scene.add(topBorder);
+        this.scene.add(bottomBorder);
+        this.scene.add(leftBorder);
+        this.scene.add(rightBorder);
 
         this.borderObjects.push(topBorder, bottomBorder, leftBorder, rightBorder);
 
     },
     updateScene(dt) {
       // Run the simulation, which itself should update the meshes
-      // console.log(dt);
       this.simulation.updateSim(dt);
     },
     animationLoop(newTime) {
@@ -140,14 +163,6 @@ export default {
       requestAnimationFrame(this.animationLoop);
 
       // Update the scene
-      // let dt = (newTime - this.originTime);
-      // this.originTime = newTime;
-      // if(dt >= 0 && dt <= 50) {
-      //   this.updateScene(dt);
-      //   // console.log(dt);
-      //   // console.log(this.threeClock.getDelta());
-      // }
-      // console.log(dt);
       this.updateScene(this.threeClock.getDelta());
 
       // Finally, render the updated scene
@@ -155,6 +170,34 @@ export default {
     },
     setupSimulation() {
       this.simulation = new PhysSim(this.co_restitution, this.co_static, this.ballObjects, this.table);
+    },
+    playSim() {
+      // Stop the existing sim
+      this.simulation.isPlaying = false;
+
+      // Reset the scene visually
+      for(let i = 0; i < this.ballObjects.length; i++) {
+        let bl = this.ballObjects[i];
+        bl.mesh.position.x = this.ballPositions[i].x;
+        bl.mesh.position.y = this.ballPositions[i].y;
+        // bl.vel = new THREE.Vector2(... this.ballPositions[i].vel); 
+        bl.vel = i == 0 ? new THREE.Vector2(this.initial_shot_x, this.initial_shot_y) : new THREE.Vector2(... this.ballPositions[i].vel);
+      }
+
+      this.simulation = new PhysSim(this.co_restitution, this.co_static, this.ballObjects, this.table);
+      this.simulation.isPlaying = true;
+    },
+    setupBasic() {
+      this.co_restitution = 0.5;
+      this.co_static = 0.3;
+    },
+    setupFric() {
+      this.co_restitution = 0.5;
+      this.co_static = 0.95;
+    },
+    setupRest() {
+      this.co_restitution = 0.85;
+      this.co_static = 0.3;
     }
   },
   mounted() {

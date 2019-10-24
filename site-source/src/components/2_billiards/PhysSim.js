@@ -9,7 +9,7 @@ export default class PhysicsSim {
     this.co_restitution = co_restitution;
   
     // Play/pause state
-    this.isPlaying = true;
+    this.isPlaying = false;
 
     this.balls = balls;
     // this.borders = borders;
@@ -17,74 +17,10 @@ export default class PhysicsSim {
 
   }
 
-  updateForces(dt) {
-
-  }
-
-  updatePositionMomentum(dt) {
-
-  }
-
-  updateVelocities(dt) {
-
-  }
-
-  /**
-  Objects have
- - Velocity
- - Acceleration
- - Force
- - Momentum
-
-
-Euler integration
-
-We can find the position from velocity
-We can find the velocity from acceleration
-We can find momentum from force
-	- Where is momentum even used?
-	- Its mass * velocity, related to new position?
-	- Then why need position?
-
-we're either velocity or momentum based...
-
-1. Calculate F(t): f = mass * acceleration
-
-2a. snext = st + vt * dt
-2b. Mnext = M + F*dt 
-2c. Collision junk
-
-3. Determine velocities for next step
-vnext = momentum / mass + velocity
-
-
-How would... I actually think about it?
-
-1. Update the position using st + vt*dt
-2. Update momentum using Mt + (ma)*dt
-3. Check if there are any collisions
-	3a. If so, back up to time of collision and calculate impulse
-4. Update velocity using new momentum / mass + impulse (collision) velocity
-
-Ball:
-  - Position (x,y)
-  - Velocity (Vec3)
-  - Momentum (Vec3)
-  
-  */
-
   updateSim(dt) {
-    // // Update each ball
-    // if(this.isPlaying) {
-    //   for(let i = 0; i < this.balls.length; i++) {
-    //     this.updateBall(dt, i);
-    //   }
-    //   // console.log(this.borders);
-    //   // this.isPlaying = false;
-    // }
-
-    this.updateEverything(dt);
-    
+    if(this.isPlaying) {
+      this.updateEverything(dt);
+    }
   }
 
   updateEverything(dt) {
@@ -189,43 +125,6 @@ Ball:
 
 
 
-
-
-
-
-
-
-  updateBall(dt, ball_index) {
-    let ball = this.balls[ball_index];
-    let ball_x = ball.mesh.position.x;
-    let ball_y = ball.mesh.position.y;
-
-    // Calculate forces - Sliding friction!
-    let force_calc = this.calculate_forces(dt, ball.mass, ball.vel);
-
-    // Update the object's position:
-    // s(t + dt) = s + v*dt
-    let new_pos = new THREE.Vector2(ball_x, ball_y).add(  new THREE.Vector2(ball.vel.x, ball.vel.y).multiplyScalar(dt)  );
-    ball.mesh.position.x = new_pos.x; ball.mesh.position.y = new_pos.y;
-    
-    // Update the momentum
-    // M(t + dt) = M + F*dt
-    // let new_mntm = new THREE.Vector2(ball.mntm.x, ball.mntm.y).add(  new THREE.Vector2(force_calc.x, force_calc.y).add(impulse).multiplyScalar(dt)  );
-    let new_mntm = new THREE.Vector2(ball.vel.x * ball.mass, ball.vel.y * ball.mass).add(  new THREE.Vector2(force_calc.x, force_calc.y).multiplyScalar(dt)  );
-    ball.mntm = new_mntm;
-
-    // Look for collisions, and handle them. This will:
-    // 1. Potentially shift the position of the object
-    // 2. Create an impulse that impacts the velocity calculation for the next step
-    //   The coefficient of resitution will be used for the impulse calculation
-    let impulse = this.handle_collisions(ball, ball_x, ball_y);
-
-    // Update velocity
-    // v(t + dt) = (M(t + dt) / mass) + impulse velocity
-    let new_vel = new THREE.Vector2(new_mntm.x, new_mntm.y).divideScalar(ball.mass).add(impulse);
-    ball.vel = new_vel;
-  }
-
   play() {
     this.isPlaying = true;
   }
@@ -247,16 +146,6 @@ Ball:
 
     let umg = this.co_sliding * (mass * 9.81);
     return new THREE.Vector2(-velocity.x, -velocity.y).normalize().multiplyScalar(umg); // Double check - Maybe 1 or 0? 
-  }
-
-  handle_collisions(ball, prev_x, prev_y) {
-    // Handle rectangle-ball collisions
-    let border_impulse = this.handle_border_collisions(ball, prev_x, prev_y);
-    
-    // Handle ball-ball collisions
-    let ball_impulse = this.handle_ball_collisions(ball);
-
-    return border_impulse.add(ball_impulse);
   }
 
   handle_border_collisions(ball, prev_x, prev_y) {
@@ -287,11 +176,11 @@ Ball:
       ball.mesh.position.x = this.lerp(current_x, prev_x, u);
       
       // Calculate impulse
-      // let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(-1, 0));
-      // return_impulse.y += impl.y;
-      // return_impulse.x += impl.x;
+      let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(0, -1));
+      return_impulse.y += impl.y;
+      return_impulse.x += impl.x;
 
-      return_impulse.y = (ball.vel.y * -2.0) * this.co_restitution;
+      // return_impulse.y = (ball.vel.y * -2.0) * this.co_restitution;
     }
 
     // Bottom: y - h/2
@@ -309,11 +198,11 @@ Ball:
       ball.mesh.position.x = this.lerp(current_x, prev_x, u);
       
       // Calculate impulse
-      // let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(1, 0));
-      // return_impulse.y += impl.y;
-      // return_impulse.x += impl.x;
+      let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(0, 1));
+      return_impulse.y += impl.y;
+      return_impulse.x += impl.x;
 
-      return_impulse.y = (ball.vel.y * -2.0) * this.co_restitution;
+      // return_impulse.y = (ball.vel.y * -2.0) * this.co_restitution;
 
     }
 
@@ -332,11 +221,11 @@ Ball:
       ball.mesh.position.y = this.lerp(current_y, prev_y, u);
       
       // Calculate impulse
-      // let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(0, -1));
-      // return_impulse.y += impl.y;
-      // return_impulse.x += impl.x;
+      let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(-1, 0));
+      return_impulse.y += impl.y;
+      return_impulse.x += impl.x;
 
-      return_impulse.x = (ball.vel.x * -2.0) * this.co_restitution;
+      // return_impulse.x = (ball.vel.x * -2.0) * this.co_restitution;
 
     }
     
@@ -355,37 +244,17 @@ Ball:
       ball.mesh.position.y = this.lerp(current_y, prev_y, u);
       
       // Calculate impulse
-      // let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(0, 1));
-      // return_impulse.y += impl.y;
-      // return_impulse.x += impl.x;
+      let impl = this.cushion_impulse(ball.mass, ball.vel, new THREE.Vector2(1, 0));
+      return_impulse.y += impl.y;
+      return_impulse.x += impl.x;
 
-      return_impulse.x = (ball.vel.x * -2.0) * this.co_restitution;
+      // return_impulse.x = (ball.vel.x * -2.0) * this.co_restitution;
 
     }
 
     // return new THREE.Vector2(0,0);
     return return_impulse;
     
-  }
-
-  handle_ball_collisions(ball) {
-    let impulse = new THREE.Vector2(0,0);
-    let b_x = ball.mesh.position.x, b_y = ball.mesh.position.y;
-    let rad = ball.mesh.geometry.boundingSphere.radius;
-
-    for(let other_b of this.balls) {
-      if(other_b.id == ball.id) { continue; } 
-
-      let oth_x = other_b.mesh.position.x, oth_y = other_b.mesh.position.y;
-
-      // Check if the balls are close enough to collide
-      let dist = Math.sqrt( Math.pow(oth_x - b_x,2) + Math.pow(oth_y - b_y, 2) );
-      if(dist <= rad * 2.0) {
-        console.log("Collision");
-      }
-    }
-
-    return impulse;
   }
 
   cushion_impulse(mass, velocity, line_of_action) {
@@ -405,13 +274,13 @@ Ball:
     // // console.log(impulse.x + " , " + impulse.y);
     // console.log(impulse);
 
+    let j = new THREE.Vector2(-velocity.x, -velocity.y).dot(line_of_action) * mass * (this.co_restitution + 1);
 
-    return new THREE.Vector2(0,0);
+    return new THREE.Vector2(line_of_action.x, line_of_action.y).multiplyScalar(j / mass);
+
+
+    // return new THREE.Vector2(0,0);
   }
-
-  // calc_impulse(v1, v2, normal, m1, m2) {
-
-  // }
 
   lerp(x, y, u) {
     return x + (u * (y - x));
