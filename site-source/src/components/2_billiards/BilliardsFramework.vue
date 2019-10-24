@@ -42,7 +42,7 @@ export default {
       // Meshes for the sim
       ballPositions: [
         {x: 0, y: 0, vel: [100, 20], mntm: [10,2000], id: 0 },
-        {x: 1, y: 1, vel: [10, 100], mntm: [0,0], id: 1 },
+        {x: -2, y: 1, vel: [10, 100], mntm: [0,0], id: 1 },
         {x: 2, y: 2, vel: [-50, -10], mntm: [0,0], id: 2 }
       ],
       ballObjects: [],

@@ -74,17 +74,127 @@ Ball:
   */
 
   updateSim(dt) {
-    // Update each ball
-    if(this.isPlaying) {
-      for(let i = 0; i < this.balls.length; i++) {
-        this.updateBall(dt, i);
-      }
-      // console.log(this.borders);
-      // this.isPlaying = false;
-    }
+    // // Update each ball
+    // if(this.isPlaying) {
+    //   for(let i = 0; i < this.balls.length; i++) {
+    //     this.updateBall(dt, i);
+    //   }
+    //   // console.log(this.borders);
+    //   // this.isPlaying = false;
+    // }
+
+    this.updateEverything(dt);
     
   }
+
+  updateEverything(dt) {
+    // Update positions and calculate forces
+    let old_positions = this.updatePositions(dt);
+    let momentums = this.calcMomentums(dt);
+
+    // Handle collisions
+    let impulses = this.calcCollisions(dt, old_positions);
+
+    // Update velocities
+    for(let i = 0; i < this.balls.length; i++) {
+      let ball = this.balls[i];
+      let new_mntm = momentums[i];
+      let impulse = impulses[i];
+      let new_vel = new THREE.Vector2(new_mntm.x, new_mntm.y).divideScalar(ball.mass).add(impulse);
+
+      ball.vel = new_vel;
+    }
+  }
+
+  updatePositions(dt) {
+    let oldPos = [];
+    for(let ball of this.balls) {
+      let ball_x = ball.mesh.position.x;
+      let ball_y = ball.mesh.position.y;
+      oldPos.push({x: ball_x, y: ball_y});
+      let new_pos = new THREE.Vector2(ball_x, ball_y).add(  new THREE.Vector2(ball.vel.x, ball.vel.y).multiplyScalar(dt)  );
+      ball.mesh.position.x = new_pos.x;
+      ball.mesh.position.y = new_pos.y;
+    }
+    return oldPos;
+  }
+
+  calcMomentums(dt) {
+    let mntms = [];
+    for(let ball of this.balls) {
+      let force_calc = this.calculate_forces(dt, ball.mass, ball.vel);
+      let new_mntm = new THREE.Vector2(ball.vel.x * ball.mass, ball.vel.y * ball.mass).add(  new THREE.Vector2(force_calc.x, force_calc.y).multiplyScalar(dt)  );
+      mntms.push(new_mntm);
+    }
+    return mntms;
+  }
+
+  calcCollisions(dt, old_pos) {
+    // First, deal with any border collisions
+    let impulses = [];
+    for(let i = 0; i < old_pos.length; i++) {
+      let border_impulse = this.handle_border_collisions(this.balls[i], old_pos[i].x, old_pos[i].y);
+      impulses.push(border_impulse);
+    }
+
+    // Now, handle any ball-related collisions
+    this.handle_all_ball_collisions(dt, old_pos, impulses);
+
+    return impulses;
+  }
+
+  handle_all_ball_collisions(dt, old_pos, impulses) {
+    // Detect collisions
+    let rad = this.balls[0].mesh.geometry.boundingSphere.radius;
+    let mass = this.balls[0].mass;
+
+    for(let a = 0; a < this.balls.length; a++) {
+      for(let b = a + 1; b < this.balls.length; b++) {
+        if(a == b) { continue; }
+
+        let a_x = this.balls[a].mesh.position.x, a_y = this.balls[a].mesh.position.y,
+            b_x = this.balls[b].mesh.position.x, b_y = this.balls[b].mesh.position.y;
+
+        let a_vel = this.balls[a].vel, b_vel = this.balls[b].vel;
+
+        // Check if they collide
+        let dist = Math.sqrt( Math.pow(a_x - b_x,2) + Math.pow(a_y - b_y, 2) );
+        if(dist <= rad * 2.0) {
+          // Find the normalized line of action
+          let line_of_action = new THREE.Vector2(a_x, a_y).sub(new THREE.Vector2(b_x, b_y)).normalize();
+
+          // Find the impulses
+          let j = (mass * (new THREE.Vector2(b_vel.x, b_vel.y).dot(line_of_action) - new THREE.Vector2(a_vel.x, a_vel.y).dot(line_of_action)) * (this.co_restitution + 1)) / 2.0;
+
+          let a_impl = new THREE.Vector2(line_of_action.x, line_of_action.y).multiplyScalar(j / mass);
+          let b_impl = new THREE.Vector2(line_of_action.x, line_of_action.y).multiplyScalar(j / mass).multiplyScalar(-1.0);
+
+          // Update existing impulses
+          impulses[a].x += a_impl.x; impulses[a].y += a_impl.y;
+          impulses[b].x += b_impl.x; impulses[b].y += b_impl.y;
+
+          // Resolve the positions of the balls so they don't stick together!
+          this.balls[a].mesh.position.x = old_pos[a].x;
+          this.balls[a].mesh.position.y = old_pos[a].y;
+
+          this.balls[b].mesh.position.x = old_pos[b].x;
+          this.balls[b].mesh.position.y = old_pos[b].y;
+
+        }
+
+      }
+    }
+  }
   
+
+
+
+
+
+
+
+
+
   updateBall(dt, ball_index) {
     let ball = this.balls[ball_index];
     let ball_x = ball.mesh.position.x;
@@ -97,8 +207,6 @@ Ball:
     // s(t + dt) = s + v*dt
     let new_pos = new THREE.Vector2(ball_x, ball_y).add(  new THREE.Vector2(ball.vel.x, ball.vel.y).multiplyScalar(dt)  );
     ball.mesh.position.x = new_pos.x; ball.mesh.position.y = new_pos.y;
-  
-    let impulse = this.handle_collisions(ball, ball_x, ball_y);
     
     // Update the momentum
     // M(t + dt) = M + F*dt
@@ -110,6 +218,7 @@ Ball:
     // 1. Potentially shift the position of the object
     // 2. Create an impulse that impacts the velocity calculation for the next step
     //   The coefficient of resitution will be used for the impulse calculation
+    let impulse = this.handle_collisions(ball, ball_x, ball_y);
 
     // Update velocity
     // v(t + dt) = (M(t + dt) / mass) + impulse velocity
