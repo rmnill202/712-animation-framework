@@ -56,7 +56,7 @@ export default {
       ballMass: 170 * 15, 
       co_restitution: 0.5, co_static: 0.3,
       simulation: null,
-      initial_shot_x: -90, initial_shot_y: 0,
+      initial_shot_x: -15, initial_shot_y: 0,
 
       // Meshes for the sim
       ballPositions: [

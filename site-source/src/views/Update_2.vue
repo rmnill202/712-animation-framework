@@ -7,7 +7,9 @@
 
     <h2>Summary</h2>
     <div style="text-align: left;">
-      <div class="update-text"> Hello world
+      <div class="update-text"> 
+        This checkpoint was a little tricky to get started with how heavy on the equations it is. However, after getting a sphere
+        bouncing around in a static rectangle, things sped up in implementation. Its not quite deterministic, but it looks right!
       </div>
     </div>
   </div>
