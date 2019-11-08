@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 
 // Returns a tuple of the next line in the input to process, and absolute motion index
 // { input_index: , motion_index: }
@@ -98,7 +99,7 @@ let parseHeader = (fileString) => {
   return joints;
 };
 
-let parseBody = (fileString) => {
+let parseBody = (fileString, joints) => {
   // Split into lines
   let lines = fileString.split("\n");
 
@@ -111,7 +112,8 @@ let parseBody = (fileString) => {
       frames.push({
         start: (i - 3) * frame_time,
         isEnd: false,
-        data: lines[i].split("\t").map(x => parseFloat(x)),
+        // data: lines[i].split("\t").map(x => parseFloat(x)),
+        data: precomputeFrameData(lines[i].split("\t").map(x => parseFloat(x)), joints)
       });
     }
   }
@@ -121,13 +123,97 @@ let parseBody = (fileString) => {
   return frames;
 };
 
+let precomputeFrameData = (data, joints) => {
+  let joint_data = [];
+
+  let parent_matrices = new Array(joints.length);
+  let parent_rotations = new Array(joints.length);
+
+  // Handle the root
+  let root_joint = joints[0];
+  let root_rx = (data[root_joint.channels['Xrotation']] * 180.0) / Math.PI, 
+      root_ry = (data[root_joint.channels['Yrotation']] * 180.0) / Math.PI, 
+      root_rz = (data[root_joint.channels['Zrotation']] * 180.0) / Math.PI;
+      
+  let root_x = data[root_joint.channels['Xposition']], 
+      root_y = data[root_joint.channels['Yposition']], 
+      root_z = data[root_joint.channels['Zposition']];
+
+    
+
+  let root_rot = new THREE.Matrix4();
+  root_rot.makeRotationFromEuler(new THREE.Euler( root_rx, root_ry, root_rz, 'XYZ' ));
+  parent_rotations[0] = root_rot;
+
+  
+  let root_pos = new THREE.Matrix4();
+  root_pos.setPosition(new THREE.Vector3(root_x, root_y, root_z));
+
+  let root_off = new THREE.Matrix4();
+  root_off.setPosition(new THREE.Vector3(...root_joint.offset));
+
+
+
+  let root_mat = new THREE.Matrix4();
+  root_mat.clone(root_off);
+  root_mat.multiply(root_pos);
+  parent_matrices[0] = root_mat;
+
+  // console.log('Debugging');
+  // console.log(`Root Pos: ${root_x}, ${root_y}, ${root_z} and offset ${root_joint.offset[0]}, ${root_joint.offset[1]}, ${root_joint.offset[2]}`)
+  // console.log(root_pos);
+  // console.log(root_off);
+  // console.log(root_mat);
+  // console.log(root_rot);
+
+  joint_data.push(root_mat);
+
+  // Compute the matrices for each joint at this frame
+  for(let i = 1; i < joints.length; i++) {
+    // OOO - (Parent Matrix * Parent Rotation) * Frame Translation * Offset
+    
+    let joint = joints[i];
+    let parent_joint = joint.parent == -1 ? null : joints[joint.parent];
+    let parent_matrix = parent_joint ? parent_matrices[joint.parent] : new THREE.Matrix4();
+    let parent_rotation = parent_joint ? parent_rotations[joint.parent] : new THREE.Matrix4();
+
+    // Get frame data
+    let frame_offset = new THREE.Matrix4();
+    frame_offset.setPosition(new THREE.Vector3(...joint.offset));
+
+    // Concatenate our offset with the parent matrix and rotation
+    let end_matrix = new THREE.Matrix4();
+    end_matrix.copy(frame_offset);
+    end_matrix.multiply(parent_rotation);
+    end_matrix.multiply(parent_matrix);
+
+    joint_data.push(end_matrix);
+
+
+    
+    // Track our rotation and matrix for future use
+    let frame_rx = (data[joint.channels['Xrotation']] * 180.0) / Math.PI, 
+        frame_ry = (data[joint.channels['Yrotation']] * 180.0) / Math.PI, 
+        frame_rz = (data[joint.channels['Zrotation']] * 180.0) / Math.PI;
+
+    let frame_rotation = new THREE.Matrix4();
+    frame_rotation.makeRotationFromEuler(new THREE.Euler( frame_rx, frame_ry, frame_rz, 'XYZ' ));
+
+
+    parent_matrices[i] = end_matrix;
+    parent_rotations[i] = frame_rotation;
+  }
+
+  return joint_data;
+};
+
 export default {
   parseBVH(fileString) {
     // Parse the header into a skeleton
     let skeleton = parseHeader(fileString.split("MOTION")[0]);
 
     // Then parse the body into frames
-    let frames = parseBody(fileString.split("MOTION")[1]);
+    let frames = parseBody(fileString.split("MOTION")[1], skeleton);
 
     console.log(frames);
 

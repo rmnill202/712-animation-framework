@@ -69,43 +69,75 @@ export default class MocapAnimation {
 
   // Calculate the rotation/position of the object at some frame and time
   updateMeshes(frame) {
-    // // Edge case - If this is the last frame, or if we're exactly at that frame reference, just return that!
-    // if(frame.isEnd || this.timeline == frame.start) {
+    // Go through each joint and apply the matrix from the frame
+    for(let i = 0; i < this.joints.length; i++) {
+      let j = this.joints[i];
+      let mesh = this.joints[i].mesh_joint;
 
-    // //   let rotQuat = new THREE.Quaternion();
-    // //   rotQuat.setFromAxisAngle( new THREE.Vector3(frame.xa, frame.ya, frame.za).normalize(), frame.thetaRad);
+      
 
-    // //   return { pos: {x: frame.x, y: frame.y, z: frame.z},
-    // //     rot: rotQuat
-    // //   };
+      // j.mesh_joint.geometry.applyMatrix(frame.data[i]);
+      // console.log(frame.data[i]);
+      // j.mesh_joint.applyMatrix(frame.data[i]);
 
-    //     this.updateMeshes(frame, frame, -1);
+      // Decompose the matrix into position/rotation components
+      let pos = new THREE.Vector3(), rot = new THREE.Quaternion(), scl = new THREE.Vector3();
+      frame.data[i].decompose(pos, rot, scl);
+
+      // Apply to the mesh
+      // mesh.position.x = pos.x;
+      // mesh.position.y = pos.y;
+      // mesh.position.z = pos.z;
+
+      // mesh.rotation.x = rot.x;
+
+      // Update position
+      mesh.position.x = pos.x || 0;
+      mesh.position.y = pos.y || 0;
+      mesh.position.z = pos.z || 0;
+      mesh.setRotationFromQuaternion(rot);
+
+      // Update the joint mesh as well
+
+
+      if(j.mesh_segment) {
+        let parent_mesh = this.joints[j.parent].mesh_joint;
+        // console.log(j.mesh_segment);
+        j.mesh_segment.geometry.vertices[0].x = pos.x;
+        j.mesh_segment.geometry.vertices[0].y = pos.y;
+        j.mesh_segment.geometry.vertices[0].z = pos.z;
+        j.mesh_segment.geometry.vertices[1].x = parent_mesh.position.x;
+        j.mesh_segment.geometry.vertices[1].y = parent_mesh.position.y;
+        j.mesh_segment.geometry.vertices[1].z = parent_mesh.position.z;
+        j.mesh_segment.geometry.verticesNeedUpdate = true;
+      }
+      
+    }
+
+    // let parent_matrices = {};
+    // let parent_rotations = {};
+
+    // // Update each joint
+    // for(let i = 0; i < this.joints.length; i++) {
+    //   // OOO - Parent Matrix * Parent Rotation * Frame Position * Offset
+      
+    //   let joint = this.joints[i];
+    //   let parent_joint = joint.parent == -1 ? null : this.joints[joint.parent];
+
+    //   // let p_rx = (parent_joint.channels['Xrotation'] * 180.0) / Math.PI, 
+    //   //     p_ry = (parent_joint.channels['Yrotation'] * 180.0) / Math.PI, 
+    //   //     p_rz = (parent_joint.channels['Zrotation'] * 180.0) / Math.PI;
+
+    //   // let parent_matrix = parent_joint ? parent_matrices[joint.parent] : null;
+    //   // let parent_rotation = new THREE.Matrix4().makeRotationFromEuler(p_rx, p_ry, p_rz);
+
+    //   let parent_matrix = parent_joint ? parent_matrices[joint.parent] : null;
+    //   let parent_rotation = parent_joint ? parent_rotations[joint.parent] : null;
+
+    //   // Get frame data
+
+
     // }
-    // else {
-    //     // Interpolate between the two frames
-    //     let next_frame = this.frames[this.frameIndex + 1];
-    //     let u = this.lerp_find_u(frame.start, next_frame.start, this.timeline);
-
-    //     // Update the meshes accordingly
-    //     this.updateMeshes(frame, next_frame, u)
-
-
-    // //   // Translation - 
-    // //   let pos = this.translation_lerp(frame, this.frames[this.frameIndex + 1]);
-
-    // //   // Rotation
-    // //   let rotQuat = this.rotation_slerp(frame, this.frames[this.frameIndex + 1]);
-
-    //   // let rotQuat = new THREE.Quaternion();
-    //   // rotQuat.setFromAxisAngle( new THREE.Vector3(frame.xa, frame.ya, frame.za).normalize(), frame.thetaRad);
-
-    //   // let rotQuat = this.alt_slerp(frame, this.frames[this.frameIndex + 1]);
-    //   // console.log(`A: ${rotQuat.toArray().toString()}\nB: ${meh.toArray().toString()}`);
-
-    // }
-
-
-    
   }
 
 //   updateMeshes(frame_1, frame_2, u) {

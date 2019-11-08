@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div id="three-js-div" style="width: 500px; height: 500px; margin: auto;"></div>
+    <div id="three-js-div" style="width: 700px; height: 500px; margin: auto;"></div>
     <button @click="togglePausePlay()">{{isPaused ? "Play" : "Pause"}}</button>
     <button @click="restartAnimation()">Restart</button>
     <input type="file" @change="animFileChosen"/>
@@ -49,9 +49,11 @@ export default {
       this.scene = new THREE.Scene();
 
       // this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 10);
-      this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 5, 1000);
-      this.camera.position.z = -100;
+      this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 1000);
+      this.camera.position.z = -200;
+      this.camera.position.y = 100;
       this.camera.rotateY(Math.PI);
+      this.camera.rotateX(-0.25);
 
       // Setup the scene
       this.setupScene();
@@ -72,9 +74,10 @@ export default {
     },
     setupScene() {
       // Create a simple floor to add to our scene!
-      let geometry = new THREE.BoxGeometry(20, 1, 20);
+      let geometry = new THREE.BoxGeometry(200, 1, 200);
       let material = new THREE.MeshNormalMaterial();
       let simpleMesh = new THREE.Mesh(geometry, material);
+      simpleMesh.position.y = -100;
       
       this.scene.add(simpleMesh);
     },
@@ -126,16 +129,16 @@ export default {
         this.bodyMeshes.push(joint_mesh);
 
         // If this joint connects to a parent, add in a Line as well
-        // if(joints[i].parent != -1) {
-        //   let line_geom = new THREE.Geometry();
-        //   line_geom.vertices.push( 
-        //     new THREE.Vector3(0,0,0),
-        //     new THREE.Vector3(1,1,1)
-        //   );
-        //   let line_mesh = new THREE.Line(line_geom, new THREE.LineBasicMaterial({ color: 0x0000ff }));
-        //   joints[i].mesh_segment = line_mesh;
-        //   this.bodyMeshes.push(line_mesh);
-        // }
+        if(joints[i].parent != -1) {
+          let line_geom = new THREE.Geometry();
+          line_geom.vertices.push( 
+            new THREE.Vector3(0,0,0),
+            new THREE.Vector3(1,1,1)
+          );
+          let line_mesh = new THREE.Line(line_geom, new THREE.LineBasicMaterial({ color: 0x0000ff }));
+          joints[i].mesh_segment = line_mesh;
+          this.bodyMeshes.push(line_mesh);
+        }
       }
 
       // Create the animation, initializing the meshes to their proper positions/orientations
@@ -143,6 +146,7 @@ export default {
 
       // Add the meshes into the scene now!
       for(let mesh of this.bodyMeshes) {
+        console.log(mesh.geometry);
         this.scene.add(mesh);
       }
 
