@@ -4,7 +4,7 @@
       <router-link to="/">Updates</router-link> |
       <router-link to="/about">About</router-link>
       <div><router-link to="/update-0">Update 0: Framework</router-link> | <router-link to="/update-1">Update 1: Keyframing</router-link>
-       | <router-link to="/update-2">Update 2: Billiards</router-link></div>
+       | <router-link to="/update-2">Update 2: Billiards</router-link> | <router-link to="/update-3">Update 3: Mocap</router-link></div>
     </div>
     <router-view/>
   </div>
