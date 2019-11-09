@@ -53,8 +53,6 @@ export default class MocapAnimation {
       }
 
       this.updateMeshes(currentFrame);
-      //   console.log(`${this.timeline} on frame ${this.frameIndex} and ${this.frames[this.frameIndex + 1].start} vs ${this.frames[this.frameIndex].start}`);
-      // console.log(`${this.timeline} on frame ${this.frameIndex}`);
 
       // Determine if the animation is complete
       if(currentFrame.isEnd) {
@@ -74,57 +72,6 @@ export default class MocapAnimation {
       let j = this.joints[i];
       let mesh = this.joints[i].mesh_joint;
 
-      
-
-      // j.mesh_joint.geometry.applyMatrix(frame.data[i]);
-      // console.log(frame.data[i]);
-      // j.mesh_joint.applyMatrix(frame.data[i]);
-
-      // Decompose the matrix into position/rotation components
-      // let pos = new THREE.Vector3(), rot = new THREE.Quaternion(), scl = new THREE.Vector3();
-      // frame.data[i].mat.decompose(pos, rot, scl);
-
-      // Apply to the mesh
-      // mesh.position.x = pos.x;
-      // mesh.position.y = pos.y;
-      // mesh.position.z = pos.z;
-
-      // mesh.rotation.x = rot.x;
-
-      // Update position
-      // mesh.position.x = pos.x || 0;
-      // mesh.position.y = pos.y || 0;
-      // mesh.position.z = pos.z || 0;
-      // mesh.setRotationFromQuaternion(rot);
-      // let new_mat = frame.data[i].mat.clone();
-      // // new_mat.multiply(mesh.matrix);
-
-      // let newpos = new THREE.Vector4(1,1,1,1).applyMatrix4(new_mat);
-      // mesh.position.x = newpos.x || 0;
-      // mesh.position.y = newpos.y || 0;
-      // mesh.position.z = newpos.z || 0;
-
-
-
-
-
-      ////// ALT - Geometry
-      // mesh.updateMatrixWorld();
-      // mesh.updateMatrix();
-      // mesh.geometry.applyMatrix( frame.data[i].mat );
-      // mesh.position.set( 0, 0, 0 );
-      // mesh.rotation.set( 0, 0, 0 );
-      // mesh.scale.set( 1, 1, 1 );
-      // mesh.updateMatrix();
-      // mesh.updateMatrixWorld();
-
-
-      // Update the joint mesh as well
-
-
-
-
-
       // Frame data has a position and rotation
       let frame_position = frame.data[i].position;
       mesh.position.x = frame_position.x;
@@ -135,7 +82,6 @@ export default class MocapAnimation {
 
       if(j.mesh_segment) {
         let parent_mesh = this.joints[j.parent].mesh_joint;
-        // console.log(j.mesh_segment);
         j.mesh_segment.geometry.vertices[0].x = mesh.position.x;
         j.mesh_segment.geometry.vertices[0].y = mesh.position.y;
         j.mesh_segment.geometry.vertices[0].z = mesh.position.z;
@@ -146,36 +92,7 @@ export default class MocapAnimation {
       }
       
     }
-
-    // let parent_matrices = {};
-    // let parent_rotations = {};
-
-    // // Update each joint
-    // for(let i = 0; i < this.joints.length; i++) {
-    //   // OOO - Parent Matrix * Parent Rotation * Frame Position * Offset
-      
-    //   let joint = this.joints[i];
-    //   let parent_joint = joint.parent == -1 ? null : this.joints[joint.parent];
-
-    //   // let p_rx = (parent_joint.channels['Xrotation'] * 180.0) / Math.PI, 
-    //   //     p_ry = (parent_joint.channels['Yrotation'] * 180.0) / Math.PI, 
-    //   //     p_rz = (parent_joint.channels['Zrotation'] * 180.0) / Math.PI;
-
-    //   // let parent_matrix = parent_joint ? parent_matrices[joint.parent] : null;
-    //   // let parent_rotation = new THREE.Matrix4().makeRotationFromEuler(p_rx, p_ry, p_rz);
-
-    //   let parent_matrix = parent_joint ? parent_matrices[joint.parent] : null;
-    //   let parent_rotation = parent_joint ? parent_rotations[joint.parent] : null;
-
-    //   // Get frame data
-
-
-    // }
   }
-
-//   updateMeshes(frame_1, frame_2, u) {
-//       // Edge case: Last frame, just compute that one's details
-//   }
 
   alt_slerp(frame_1, frame_2) {
     let u = this.lerp_find_u(frame_1.start, frame_2.start, this.timeline);

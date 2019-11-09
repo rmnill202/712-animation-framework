@@ -9,7 +9,7 @@
     <h2>Summary</h2>
     <div style="text-align: left;">
       <div class="update-text"> 
-        TBD
+        Chaining rotations properly is a pain. 
       </div>
     </div>
   </div>
