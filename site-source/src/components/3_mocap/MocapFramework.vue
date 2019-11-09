@@ -50,10 +50,12 @@ export default {
 
       // this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 10);
       this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 1000);
-      this.camera.position.z = -200;
-      this.camera.position.y = 100;
+      this.camera.position.z = -250;
+      this.camera.position.y = 120;
+      this.camera.position.x = -120;
       this.camera.rotateY(Math.PI);
-      this.camera.rotateX(-0.25);
+      this.camera.rotateY(0.5);
+      this.camera.rotateX(-0.20);
 
       // Setup the scene
       this.setupScene();
@@ -80,6 +82,7 @@ export default {
       simpleMesh.position.y = -100;
       
       this.scene.add(simpleMesh);
+      // this.scene.add(new THREE.GridHelper( 400, 10 ));
     },
     updateScene(dt) {
       // Update... stuff?
@@ -124,7 +127,7 @@ export default {
 
       for(let i = 0; i < joints.length; i++) {
         // Add a joint mesh (Cube)
-        let joint_mesh = new THREE.Mesh(new THREE.BoxGeometry(10,10,10), new THREE.MeshNormalMaterial());
+        let joint_mesh = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshNormalMaterial());
         joints[i].mesh_joint = joint_mesh;
         this.bodyMeshes.push(joint_mesh);
 

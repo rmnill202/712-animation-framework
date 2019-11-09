@@ -81,8 +81,8 @@ export default class MocapAnimation {
       // j.mesh_joint.applyMatrix(frame.data[i]);
 
       // Decompose the matrix into position/rotation components
-      let pos = new THREE.Vector3(), rot = new THREE.Quaternion(), scl = new THREE.Vector3();
-      frame.data[i].decompose(pos, rot, scl);
+      // let pos = new THREE.Vector3(), rot = new THREE.Quaternion(), scl = new THREE.Vector3();
+      // frame.data[i].mat.decompose(pos, rot, scl);
 
       // Apply to the mesh
       // mesh.position.x = pos.x;
@@ -92,20 +92,53 @@ export default class MocapAnimation {
       // mesh.rotation.x = rot.x;
 
       // Update position
-      mesh.position.x = pos.x || 0;
-      mesh.position.y = pos.y || 0;
-      mesh.position.z = pos.z || 0;
-      mesh.setRotationFromQuaternion(rot);
+      // mesh.position.x = pos.x || 0;
+      // mesh.position.y = pos.y || 0;
+      // mesh.position.z = pos.z || 0;
+      // mesh.setRotationFromQuaternion(rot);
+      // let new_mat = frame.data[i].mat.clone();
+      // // new_mat.multiply(mesh.matrix);
+
+      // let newpos = new THREE.Vector4(1,1,1,1).applyMatrix4(new_mat);
+      // mesh.position.x = newpos.x || 0;
+      // mesh.position.y = newpos.y || 0;
+      // mesh.position.z = newpos.z || 0;
+
+
+
+
+
+      ////// ALT - Geometry
+      // mesh.updateMatrixWorld();
+      // mesh.updateMatrix();
+      // mesh.geometry.applyMatrix( frame.data[i].mat );
+      // mesh.position.set( 0, 0, 0 );
+      // mesh.rotation.set( 0, 0, 0 );
+      // mesh.scale.set( 1, 1, 1 );
+      // mesh.updateMatrix();
+      // mesh.updateMatrixWorld();
+
 
       // Update the joint mesh as well
+
+
+
+
+
+      // Frame data has a position and rotation
+      let frame_position = frame.data[i].position;
+      mesh.position.x = frame_position.x;
+      mesh.position.y = frame_position.y;
+      mesh.position.z = frame_position.z;
+      mesh.setRotationFromQuaternion(frame.data[i].rotation);
 
 
       if(j.mesh_segment) {
         let parent_mesh = this.joints[j.parent].mesh_joint;
         // console.log(j.mesh_segment);
-        j.mesh_segment.geometry.vertices[0].x = pos.x;
-        j.mesh_segment.geometry.vertices[0].y = pos.y;
-        j.mesh_segment.geometry.vertices[0].z = pos.z;
+        j.mesh_segment.geometry.vertices[0].x = mesh.position.x;
+        j.mesh_segment.geometry.vertices[0].y = mesh.position.y;
+        j.mesh_segment.geometry.vertices[0].z = mesh.position.z;
         j.mesh_segment.geometry.vertices[1].x = parent_mesh.position.x;
         j.mesh_segment.geometry.vertices[1].y = parent_mesh.position.y;
         j.mesh_segment.geometry.vertices[1].z = parent_mesh.position.z;

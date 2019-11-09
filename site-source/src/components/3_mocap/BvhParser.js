@@ -124,85 +124,74 @@ let parseBody = (fileString, joints) => {
 };
 
 let precomputeFrameData = (data, joints) => {
-  let joint_data = [];
+  let joint_data = new Array(joints.length);
 
-  let parent_matrices = new Array(joints.length);
-  let parent_rotations = new Array(joints.length);
-
-  // Handle the root
-  let root_joint = joints[0];
-  let root_rx = (data[root_joint.channels['Xrotation']] * 180.0) / Math.PI, 
-      root_ry = (data[root_joint.channels['Yrotation']] * 180.0) / Math.PI, 
-      root_rz = (data[root_joint.channels['Zrotation']] * 180.0) / Math.PI;
-      
-  let root_x = data[root_joint.channels['Xposition']], 
-      root_y = data[root_joint.channels['Yposition']], 
-      root_z = data[root_joint.channels['Zposition']];
-
-    
-
-  let root_rot = new THREE.Matrix4();
-  root_rot.makeRotationFromEuler(new THREE.Euler( root_rx, root_ry, root_rz, 'XYZ' ));
-  parent_rotations[0] = root_rot;
-
-  
-  let root_pos = new THREE.Matrix4();
-  root_pos.setPosition(new THREE.Vector3(root_x, root_y, root_z));
-
-  let root_off = new THREE.Matrix4();
-  root_off.setPosition(new THREE.Vector3(...root_joint.offset));
+  // Go through the hierarchy and compute the position of each joint. Track parent positions/rotations
+  let parent_pos = new Array(joints.length);
+  let parent_rtn = new Array(joints.length);
 
 
+  //// Edge case - Root node
+  // Compute the root's position, based on its offset and X/Y/Z channels
+  let root_pos = new THREE.Vector3(...joints[0].offset);
+  root_pos.add(new THREE.Vector3(data[joints[0].channels['Xposition']], 
+                                 data[joints[0].channels['Yposition']], 
+                                 data[joints[0].channels['Zposition']]));
 
-  let root_mat = new THREE.Matrix4();
-  root_mat.clone(root_off);
-  root_mat.multiply(root_pos);
-  parent_matrices[0] = root_mat;
+  parent_pos[0] = root_pos;
 
-  // console.log('Debugging');
-  // console.log(`Root Pos: ${root_x}, ${root_y}, ${root_z} and offset ${root_joint.offset[0]}, ${root_joint.offset[1]}, ${root_joint.offset[2]}`)
-  // console.log(root_pos);
-  // console.log(root_off);
-  // console.log(root_mat);
-  // console.log(root_rot);
+  // Also track the root node's rotation, which flips the entire object around
+  let root_rot = new THREE.Quaternion();
+  root_rot.setFromEuler(new THREE.Euler( (data[joints[0].channels['Xrotation']] * Math.PI) / 180.0,
+                                         (data[joints[0].channels['Yrotation']] * Math.PI) / 180.0,
+                                         (data[joints[0].channels['Zrotation']] * Math.PI) / 180.0 ));
+  parent_rtn[0] = root_rot;
 
-  joint_data.push(root_mat);
+  // Store that in the final joint data
+  joint_data[0] = {
+    position: root_pos,
+    rotation: root_rot,
+  };
 
-  // Compute the matrices for each joint at this frame
+
+  // Go through the remaining nodes
   for(let i = 1; i < joints.length; i++) {
-    // OOO - (Parent Matrix * Parent Rotation) * Frame Translation * Offset
-    
-    let joint = joints[i];
-    let parent_joint = joint.parent == -1 ? null : joints[joint.parent];
-    let parent_matrix = parent_joint ? parent_matrices[joint.parent] : new THREE.Matrix4();
-    let parent_rotation = parent_joint ? parent_rotations[joint.parent] : new THREE.Matrix4();
+    // Get info from the joint
+    let j = joints[i];
+    let j_fx = j.offset[0],
+        j_fy = j.offset[1],
+        j_fz = j.offset[2],
+        is_end = j.name == "End Site";
+      
+    // This rotation information will be useful for later joints
+    let j_rx = is_end ? 0.0 : (data[j.channels['Xrotation']] * Math.PI) / 180.0,
+        j_ry = is_end ? 0.0 : (data[j.channels['Yrotation']] * Math.PI) / 180.0,
+        j_rz = is_end ? 0.0 : (data[j.channels['Zrotation']] * Math.PI) / 180.0;
+    let j_future_rotation = new THREE.Quaternion();
+    j_future_rotation.setFromEuler(new THREE.Euler(j_rx, j_ry, j_rz));
+    parent_rtn[i] = j_future_rotation;
 
-    // Get frame data
-    let frame_offset = new THREE.Matrix4();
-    frame_offset.setPosition(new THREE.Vector3(...joint.offset));
+    // The position of this node is just the offset from the parent node given some rotation. That
+    //   rotation comes from the parent node itself. So we'll use both to determine the absolute
+    //   world space position of this node!
+    let origin_position = parent_pos[j.parent].clone(), rotation_around_origin = parent_rtn[j.parent],
+        offset_position = new THREE.Vector3(...j.offset);
 
-    // Concatenate our offset with the parent matrix and rotation
-    let end_matrix = new THREE.Matrix4();
-    end_matrix.copy(frame_offset);
-    end_matrix.multiply(parent_rotation);
-    end_matrix.multiply(parent_matrix);
+    // Rotate the offset, and add it onto the origin position
+    offset_position.applyQuaternion(rotation_around_origin);
+    origin_position.add(offset_position);
 
-    joint_data.push(end_matrix);
+    // Store that final position
+    parent_pos[i] = origin_position;
 
+    // And pass along this object's position/rotation to the end data
+    joint_data[i] = {
+      position: origin_position,
+      rotation: rotation_around_origin,
+    };
 
-    
-    // Track our rotation and matrix for future use
-    let frame_rx = (data[joint.channels['Xrotation']] * 180.0) / Math.PI, 
-        frame_ry = (data[joint.channels['Yrotation']] * 180.0) / Math.PI, 
-        frame_rz = (data[joint.channels['Zrotation']] * 180.0) / Math.PI;
-
-    let frame_rotation = new THREE.Matrix4();
-    frame_rotation.makeRotationFromEuler(new THREE.Euler( frame_rx, frame_ry, frame_rz, 'XYZ' ));
-
-
-    parent_matrices[i] = end_matrix;
-    parent_rotations[i] = frame_rotation;
   }
+  
 
   return joint_data;
 };
