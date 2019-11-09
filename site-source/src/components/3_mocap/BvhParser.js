@@ -69,7 +69,7 @@ let parseJoint = (parent, motion_index, joints, line_index, lines) => {
 
 // Gather the XYZ offset, return as a list
 let getOffset = (string) => {
-  console.log(string);
+  // console.log(string);
   let offset = string.split("\t");
   return [parseFloat(offset[1]), parseFloat(offset[2]), parseFloat(offset[3])];
 };
@@ -141,10 +141,9 @@ let precomputeFrameData = (data, joints) => {
   parent_pos[0] = root_pos;
 
   // Also track the root node's rotation, which flips the entire object around
-  let root_rot = new THREE.Quaternion();
-  root_rot.setFromEuler(new THREE.Euler( (data[joints[0].channels['Xrotation']] * Math.PI) / 180.0,
-                                         (data[joints[0].channels['Yrotation']] * Math.PI) / 180.0,
-                                         (data[joints[0].channels['Zrotation']] * Math.PI) / 180.0 ));
+  let root_rot = getRotationQuaternion((data[joints[0].channels['Xrotation']] * Math.PI) / 180.0,
+                                       (data[joints[0].channels['Yrotation']] * Math.PI) / 180.0,
+                                       (data[joints[0].channels['Zrotation']] * Math.PI) / 180.0 );
   parent_rtn[0] = root_rot;
 
   // Store that in the final joint data
@@ -157,18 +156,17 @@ let precomputeFrameData = (data, joints) => {
   // Go through the remaining nodes
   for(let i = 1; i < joints.length; i++) {
     // Get info from the joint
-    let j = joints[i];
-    let j_fx = j.offset[0],
-        j_fy = j.offset[1],
-        j_fz = j.offset[2],
-        is_end = j.name == "End Site";
+    let j = joints[i], is_end = j.name == "End Site";
       
     // This rotation information will be useful for later joints
-    let j_rx = is_end ? 0.0 : (data[j.channels['Xrotation']] * Math.PI) / 180.0,
-        j_ry = is_end ? 0.0 : (data[j.channels['Yrotation']] * Math.PI) / 180.0,
-        j_rz = is_end ? 0.0 : (data[j.channels['Zrotation']] * Math.PI) / 180.0;
-    let j_future_rotation = new THREE.Quaternion();
-    j_future_rotation.setFromEuler(new THREE.Euler(j_rx, j_ry, j_rz));
+    // let j_future_rotation = getRotationQuaternion((data[joints[i].channels['Xrotation']] * Math.PI) / 180.0,
+    //                                               (data[joints[i].channels['Yrotation']] * Math.PI) / 180.0,
+    //                                               (data[joints[i].channels['Zrotation']] * Math.PI) / 180.0 );
+    // j_future_rotation.multiply(parent_rtn[j.parent]);
+    let j_future_rotation = parent_rtn[j.parent].clone();
+    j_future_rotation.multiply(getRotationQuaternion((data[joints[i].channels['Xrotation']] * Math.PI) / 180.0,
+                                                  (data[joints[i].channels['Yrotation']] * Math.PI) / 180.0,
+                                                  (data[joints[i].channels['Zrotation']] * Math.PI) / 180.0 ));
     parent_rtn[i] = j_future_rotation;
 
     // The position of this node is just the offset from the parent node given some rotation. That
@@ -177,16 +175,24 @@ let precomputeFrameData = (data, joints) => {
     let origin_position = parent_pos[j.parent].clone(), rotation_around_origin = parent_rtn[j.parent],
         offset_position = new THREE.Vector3(...j.offset);
 
+
+
+    // A
     // Rotate the offset, and add it onto the origin position
+    // offset_position.sub(origin_position);
     offset_position.applyQuaternion(rotation_around_origin);
-    origin_position.add(offset_position);
+    offset_position.add(origin_position);
+
+
+    // B
+    // Ensure the new point is centered on the origin point. 
 
     // Store that final position
-    parent_pos[i] = origin_position;
+    parent_pos[i] = offset_position;
 
     // And pass along this object's position/rotation to the end data
     joint_data[i] = {
-      position: origin_position,
+      position: offset_position,
       rotation: rotation_around_origin,
     };
 
@@ -194,6 +200,20 @@ let precomputeFrameData = (data, joints) => {
   
 
   return joint_data;
+};
+
+let getRotationQuaternion = (rx, ry, rz) => {
+  // Apply in Z > X > Y order
+  let qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rx);
+  let qy = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
+  let qz = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), rz);
+
+  qz.multiply(qx).multiply(qy);
+  return qz.normalize();
+  // qy.multiply(qx).multiply(qz);
+  // return qy;
+  // qx.multiply(qy).multiply(qz);
+  // return qx;
 };
 
 export default {
@@ -204,7 +224,9 @@ export default {
     // Then parse the body into frames
     let frames = parseBody(fileString.split("MOTION")[1], skeleton);
 
-    console.log(frames);
+    // console.log(skeleton);
+    // console.log(frames);
+    
 
     // Return as a tuple
     return {

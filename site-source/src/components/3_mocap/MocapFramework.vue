@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div id="three-js-div" style="width: 700px; height: 500px; margin: auto;"></div>
+    <div id="three-js-div" style="width: 1100px; height: 800px; margin: auto;"></div>
     <button @click="togglePausePlay()">{{isPaused ? "Play" : "Pause"}}</button>
     <button @click="restartAnimation()">Restart</button>
     <input type="file" @change="animFileChosen"/>
@@ -49,12 +49,12 @@ export default {
       this.scene = new THREE.Scene();
 
       // this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 10);
-      this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 1000);
-      this.camera.position.z = -250;
-      this.camera.position.y = 120;
-      this.camera.position.x = -120;
+      this.camera = new THREE.PerspectiveCamera(75, threeJsDiv.clientWidth / threeJsDiv.clientHeight, 0.01, 10000);
+      this.camera.position.z = -310;
+      this.camera.position.y = 150;
+      this.camera.position.x = -270;
       this.camera.rotateY(Math.PI);
-      this.camera.rotateY(0.5);
+      this.camera.rotateY(0.9);
       this.camera.rotateX(-0.20);
 
       // Setup the scene
@@ -76,7 +76,7 @@ export default {
     },
     setupScene() {
       // Create a simple floor to add to our scene!
-      let geometry = new THREE.BoxGeometry(200, 1, 200);
+      let geometry = new THREE.BoxGeometry(3000, 1, 3000);
       let material = new THREE.MeshNormalMaterial();
       let simpleMesh = new THREE.Mesh(geometry, material);
       simpleMesh.position.y = -100;
@@ -111,7 +111,7 @@ export default {
         
     },
     parseBvhFile(fileString) {
-      console.log("Attempting to parse...");
+      // console.log("Attempting to parse...");
       let parsed = BvhParser.parseBVH(fileString);
 
       // Cleanup the existing scene
@@ -149,7 +149,7 @@ export default {
 
       // Add the meshes into the scene now!
       for(let mesh of this.bodyMeshes) {
-        console.log(mesh.geometry);
+        // console.log(mesh.geometry);
         this.scene.add(mesh);
       }
 
@@ -170,7 +170,7 @@ export default {
           this.isPaused = true;
         }
       }
-    }
+    },
   },
   mounted() {
     this.init_threejs();
