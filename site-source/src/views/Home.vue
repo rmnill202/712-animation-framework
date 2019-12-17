@@ -9,6 +9,9 @@
     <div><router-link to="/update-1">Update 1: Keyframing</router-link></div>
     <div><router-link to="/update-2">Update 2: Billiards</router-link></div>
     <div><router-link to="/update-3">Update 3: Mocap</router-link></div>
+    <div><router-link to="/update-4">Update 4: Particles</router-link></div>
+    <div><router-link to="/update-5">Update 4 Extra: Plane Collision</router-link></div>
+    <div><router-link to="/update-6">Update 4 Extra: Color Interpolation</router-link></div>
   </div>
 </template>
 

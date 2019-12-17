@@ -17,13 +17,23 @@ export default class SceneEntity {
     if(this.animation && this.animation.playing()) {
       let frame = this.animation.getFrame(dt);
 
+      // Calculate differences
+      let diffs = {x: frame.pos.x - this.mesh.position.x,
+                   y: frame.pos.y - this.mesh.position.y,
+                   z: frame.pos.z - this.mesh.position.z
+      };
+
       // Update position
       this.mesh.position.x = frame.pos.x;
       this.mesh.position.y = frame.pos.y;
       this.mesh.position.z = frame.pos.z;
 
       // // Update rotation
-      this.mesh.setRotationFromQuaternion(frame.rot);
+      if(frame.rot) {
+        this.mesh.setRotationFromQuaternion(frame.rot);
+      }
+
+      return diffs;
 
     }
   }

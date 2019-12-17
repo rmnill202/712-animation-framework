@@ -38,6 +38,21 @@ export default new Router({
       path: '/update-3',
       name: 'update-3',
       component: () => import(/* webpackChunkName: "update_3" */ './views/Update_3.vue')
+    },
+    {
+      path: '/update-4',
+      name: 'update-4',
+      component: () => import(/* webpackChunkName: "update_4" */ './views/Update_4.vue')
+    },
+    {
+      path: '/update-5',
+      name: 'update-5',
+      component: () => import(/* webpackChunkName: "update_5" */ './views/Update_5.vue')
+    },
+    {
+      path: '/update-6',
+      name: 'update-6',
+      component: () => import(/* webpackChunkName: "update_6" */ './views/Update_6.vue')
     }
   ]
 })

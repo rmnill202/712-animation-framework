@@ -4,6 +4,9 @@
     <button @click="togglePausePlay()">{{isPaused ? "Play" : "Pause"}}</button>
     <button @click="restartAnimation()">Restart</button>
     <input type="file" @change="animFileChosen"/>
+    <div>
+      Speed rate: (1.0 being normal) <input v-model="speed_rate"/>
+    </div>
   </div>
 </template>
 
@@ -22,6 +25,7 @@ export default {
       renderer: null,
       mesh: null,
       sceneObjects: [],
+      speed_rate: 1.0,
 
       // UI Stuff
       
@@ -87,7 +91,7 @@ export default {
     updateScene(dt) {
       // Update... stuff?
       if(this.mocap) {
-        this.mocap.getFrame(dt);
+        this.mocap.getFrame(dt * this.speed_rate);
       }
     },
     animationLoop(newTime) {
